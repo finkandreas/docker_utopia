@@ -1,0 +1,108 @@
+diff --git a/examples/step-55/step-55.cc b/examples/step-55/step-55.cc
+index e417e727e5..b6cf70db14 100644
+--- a/examples/step-55/step-55.cc
++++ b/examples/step-55/step-55.cc
+@@ -81,6 +81,8 @@ namespace LA
+ #include <fstream>
+ #include <iostream>
+ 
++using Step55PC = LA::MPI::PreconditionAMG;
++
+ namespace Step55
+ {
+   using namespace dealii;
+@@ -590,35 +592,42 @@ namespace Step55
+   {
+     TimerOutput::Scope t(computing_timer, "solve");
+ 
+-    LA::MPI::PreconditionAMG prec_A;
++    Step55PC prec_A;
+     {
+-      LA::MPI::PreconditionAMG::AdditionalData data;
+-
+-#ifdef USE_PETSC_LA
++      Step55PC::AdditionalData data;
+       data.symmetric_operator = true;
++      data.output_details = 3;
++#ifdef USE_PETSC_LA
++      //~ data.symmetric_operator = true;
+ #else
+-//      data.n_cycles = 1;
+-//      data.higher_order_elements = true;
+-//      data.elliptic = true;
+-//      data.smoother_sweeps = 5;
+-//      data.smoother_overlap = 1;
+-
+-//      std::vector<std::vector<bool> > constant_modes;
+-//      FEValuesExtractors::Vector velocity_components(0);
+-//      DoFTools::extract_constant_modes (dof_handler,
+-//                                        fe.component_mask(velocity_components),
+-//                                        constant_modes);
+-//      data.constant_modes = constant_modes;
++      //~ data.n_cycles = 3;
++      //~ data.w_cycle = true;
++      //~ data.aggregation_threshold = 0.1;
++      //~ data.higher_order_elements = true;
++      //~ data.elliptic = true;
++      //~ data.aggregation_threshold = 0.02;
++      //~ data.smoother_sweeps = 5;
++      //~ data.smoother_overlap = 1;
++      //~ data.smoother_type = "ILU";
++      //~ data.coarse_type = "ILU";
++
++      //~ std::vector<std::vector<bool> > constant_modes;
++      //~ FEValuesExtractors::Vector velocity_components(0);
++      //~ DoFTools::extract_constant_modes (dof_handler,
++                                        //~ fe.component_mask(velocity_components),
++                                        //~ constant_modes);
++      //~ data.constant_modes = constant_modes;
+ #endif
+       prec_A.initialize(system_matrix.block(0, 0), data);
+     }
+ 
+-    LA::MPI::PreconditionAMG prec_S;
++    Step55PC prec_S;
+     {
+-      LA::MPI::PreconditionAMG::AdditionalData data;
++      Step55PC::AdditionalData data;
++      data.symmetric_operator = true;
+ 
+ #ifdef USE_PETSC_LA
+-      data.symmetric_operator = true;
++      //~ data.symmetric_operator = true;
+ #else
+ #endif
+       prec_S.initialize(preconditioner_matrix.block(1, 1), data);
+@@ -626,12 +635,12 @@ namespace Step55
+ 
+     // The InverseMatrix is used to solve for the mass matrix:
+     using mp_inverse_t = LinearSolvers::InverseMatrix<LA::MPI::SparseMatrix,
+-                                                      LA::MPI::PreconditionAMG>;
++                                                      Step55PC>;
+     const mp_inverse_t mp_inverse(preconditioner_matrix.block(1, 1), prec_S);
+ 
+     // This constructs the block preconditioner based on the preconditioners
+     // for the individual blocks defined above.
+-    const LinearSolvers::BlockDiagonalPreconditioner<LA::MPI::PreconditionAMG,
++    const LinearSolvers::BlockDiagonalPreconditioner<Step55PC,
+                                                      mp_inverse_t>
+       preconditioner(prec_A, mp_inverse);
+ 
+@@ -817,7 +826,7 @@ namespace Step55
+ #else
+     pcout << "Running using Trilinos." << std::endl;
+ #endif
+-    const unsigned int n_cycles = 5;
++    const unsigned int n_cycles = 9;
+     for (unsigned int cycle = 0; cycle < n_cycles; ++cycle)
+       {
+         pcout << "Cycle " << cycle << ':' << std::endl;
+@@ -832,7 +841,7 @@ namespace Step55
+         assemble_system();
+         solve();
+ 
+-        if (Utilities::MPI::n_mpi_processes(mpi_communicator) <= 32)
++//        if (Utilities::MPI::n_mpi_processes(mpi_communicator) <= 32)
+           {
+             TimerOutput::Scope t(computing_timer, "output");
+             output_results(cycle);

@@ -1,0 +1,16 @@
+diff --git a/source/lac/trilinos_vector.cc b/source/lac/trilinos_vector.cc
+index daecaa7e31..5d30c6c0a6 100644
+--- a/source/lac/trilinos_vector.cc
++++ b/source/lac/trilinos_vector.cc
+@@ -159,8 +159,10 @@ namespace TrilinosWrappers
+     {
+       nonlocal_vector.reset();
+ 
++      bool overlapping = (Utilities::MPI::sum (parallel_partitioner.n_elements(), communicator) != parallel_partitioner.size());
++
+       Epetra_Map map = parallel_partitioner.make_trilinos_map (communicator,
+-                                                               true);
++                                                               overlapping);
+ 
+       vector.reset (new Epetra_FEVector(map));
+ 

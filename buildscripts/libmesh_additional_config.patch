@@ -1,0 +1,14 @@
+diff --git a/scripts/update_and_rebuild_libmesh.sh b/scripts/update_and_rebuild_libmesh.sh
+index 908e7ffab6..e6849ed6d6 100755
+--- a/scripts/update_and_rebuild_libmesh.sh
++++ b/scripts/update_and_rebuild_libmesh.sh
+@@ -96,6 +96,9 @@ if [ -z "$go_fast" ]; then
+                --disable-maintainer-mode \
+                --enable-petsc-required \
+                --disable-metaphysicl \
++               --disable-glibcxx-debugging \
++               --with-eigen-include=${EIGEN_DIR}/include/eigen3 \
++               --with-hdf5=${PETSC_DIR} --with-netcdf=${PETSC_DIR} \
+                $DISABLE_TIMESTAMPS $VTK_OPTIONS $* || exit 1
+ else
+   # The build directory must already exist: you can't do --fast for

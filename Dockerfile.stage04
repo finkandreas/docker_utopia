@@ -1,0 +1,9 @@
+FROM finkandreas/utopia:stage03
+MAINTAINER Andreas Fink <andreas.fink@cscs.ch>
+
+COPY buildscripts /tmp/buildscripts
+RUN source scl_source enable devtoolset-7 \
+    && source /opt_scientific/libs/environment \
+    &&/tmp/buildscripts/build_cpu.sh /tmp/build /opt_scientific/libs 4 \
+    && echo "source scl_source enable devtoolset-7" >> /opt_scientific/libs/environment \
+    && rm -Rf /tmp/build

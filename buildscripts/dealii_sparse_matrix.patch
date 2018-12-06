@@ -1,0 +1,24 @@
+diff --git a/source/lac/petsc_parallel_sparse_matrix.cc b/source/lac/petsc_parallel_sparse_matrix.cc
+index ae3f970d33..9520f99276 100644
+--- a/source/lac/petsc_parallel_sparse_matrix.cc
++++ b/source/lac/petsc_parallel_sparse_matrix.cc
+@@ -456,13 +456,13 @@ namespace PETScWrappers
+           // now copy over the information
+           // from the sparsity pattern.
+           {
+-            PetscInt *ptr = &colnums_in_window[0];
+-            for (PetscInt i = local_row_start; i < local_row_end; ++i)
+-              for (typename SparsityPatternType::iterator p =
+-                     sparsity_pattern.begin(i);
+-                   p != sparsity_pattern.end(i);
+-                   ++p, ++ptr)
++            PetscInt *ptr = colnums_in_window.data();
++            if (local_row_end > local_row_start) {
++              typename SparsityPatternType::iterator p=sparsity_pattern.begin(local_row_start), end=sparsity_pattern.end(local_row_end-1);
++              for (; p!=end; ++p, ++ptr) {
+                 *ptr = p->column();
++              }
++            }
+           }
+ 
+ 

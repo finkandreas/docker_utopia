@@ -1,0 +1,27 @@
+diff --git a/cmake/modules/FindMPI.cmake b/cmake/modules/FindMPI.cmake
+index 917a2dd852..37f90d8527 100644
+--- a/cmake/modules/FindMPI.cmake
++++ b/cmake/modules/FindMPI.cmake
+@@ -122,6 +122,10 @@ IF(NOT DEFINED MPI_VERSION OR MPI_VERSION STREQUAL ".")
+   SET(MPI_VERSION "0.0")
+   SET(MPI_VERSION_MAJOR "0")
+   SET(MPI_VERSION_MINOR "0")
++ELSE()
++  SET(MPI_VERSION "3.1")
++  SET(MPI_VERSION_MAJOR "3")
++  SET(MPI_VERSION_MINOR "1")
+ ENDIF()
+ 
+ DEAL_II_PACKAGE_HANDLE(MPI
+diff --git a/cmake/modules/FindZLIB.cmake b/cmake/modules/FindZLIB.cmake
+index f077287dad..450b22c3e4 100644
+--- a/cmake/modules/FindZLIB.cmake
++++ b/cmake/modules/FindZLIB.cmake
+@@ -35,6 +35,7 @@ FIND_PACKAGE(ZLIB)
+ LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules/)
+ 
+ SET(ZLIB_VERSION ${ZLIB_VERSION_STRING})
++set(ZLIB_INCLUDE_DIR "/usr/local/include")
+ 
+ DEAL_II_PACKAGE_HANDLE(ZLIB
+   LIBRARIES REQUIRED ZLIB_LIBRARY

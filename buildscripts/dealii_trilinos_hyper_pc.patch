@@ -1,0 +1,280 @@
+diff --git a/include/deal.II/lac/generic_linear_algebra.h b/include/deal.II/lac/generic_linear_algebra.h
+index 5187bb79a6..f1feaf69eb 100644
+--- a/include/deal.II/lac/generic_linear_algebra.h
++++ b/include/deal.II/lac/generic_linear_algebra.h
+@@ -190,7 +190,7 @@ namespace LinearAlgebraTrilinos
+     /**
+      * Typedef for the AMG preconditioner type.
+      */
+-    using PreconditionAMG = TrilinosWrappers::PreconditionAMG;
++    using PreconditionAMG = TrilinosWrappers::PreconditionBoomerAMG;
+ 
+     /**
+      * Typedef for the Incomplete Cholesky preconditioner.
+diff --git a/include/deal.II/lac/trilinos_precondition.h b/include/deal.II/lac/trilinos_precondition.h
+index 81a00643c9..5ef134fd30 100644
+--- a/include/deal.II/lac/trilinos_precondition.h
++++ b/include/deal.II/lac/trilinos_precondition.h
+@@ -1618,6 +1618,138 @@ namespace TrilinosWrappers
+     std::shared_ptr<SparseMatrix> trilinos_matrix;
+   };
+ 
++  class PreconditionBoomerAMG : public PreconditionBase
++  {
++  public:
++
++    /**
++     * A data structure that is used to control details of how the algebraic
++     * multigrid is set up. The flags detailed in here are then passed to the
++     * Trilinos ML implementation. A structure of the current type are passed
++     * to the constructor of PreconditionBoomerAMG.
++     */
++    struct AdditionalData
++    {
++      /**
++       * Constructor. By default, we pretend to work on elliptic problems with
++       * linear finite elements on a scalar equation.
++       */
++      AdditionalData (const bool symmetric_operator = false,
++                      const double strong_threshold = 0.25,
++                      const double max_row_sum = 0.9,
++                      const unsigned int aggressive_coarsening_num_levels = 0,
++                      const bool output_details = false);
++
++      /**
++       * Set this flag to true if you have a symmetric system matrix and you
++       * want to use a solver which assumes a symmetric preconditioner like
++       * CG. The relaxation is done with SSOR/Jacobi when set to true and with
++       * SOR/Jacobi otherwise.
++       */
++      bool symmetric_operator;
++
++      /**
++       * Threshold of when nodes are considered strongly connected. See
++       * HYPRE_BoomerAMGSetStrongThreshold(). Recommended values are 0.25 for
++       * 2d and 0.5 for 3d problems, but it is problem dependent.
++       */
++      double strong_threshold;
++
++      /**
++       * If set to a value smaller than 1.0 then diagonally dominant parts of
++       * the matrix are treated as having no strongly connected nodes. If the
++       * row sum weighted by the diagonal entry is bigger than the given
++       * value, it is considered diagonally dominant. This feature is turned
++       * of by setting the value to 1.0. This is the default as some matrices
++       * can result in having only diagonally dominant entries and thus no
++       * multigrid levels are constructed. The default in BoomerAMG for this
++       * is 0.9. When you try this, check for a reasonable number of levels
++       * created.
++       */
++      double max_row_sum;
++
++      /**
++       * Number of levels of aggressive coarsening. Increasing this value
++       * reduces the construction time and memory requirements but may
++       * decrease effectiveness.
++       */
++      unsigned int aggressive_coarsening_num_levels;
++
++      /**
++       * Setting this flag to true produces debug output from HYPRE, when the
++       * preconditioner is constructed.
++       */
++      bool output_details;
++    };
++
++    /**
++     * Destructor.
++     */
++    ~PreconditionBoomerAMG();
++
++
++    /**
++     * Let Trilinos compute a multilevel hierarchy for the solution of a
++     * linear system with the given matrix. The function uses the matrix
++     * format specified in TrilinosWrappers::SparseMatrix.
++     */
++    void initialize (const SparseMatrix   &matrix,
++                     const AdditionalData &additional_data = AdditionalData());
++
++    /**
++     * Let Trilinos compute a multilevel hierarchy for the solution of a
++     * linear system with the given matrix. As opposed to the other initialize
++     * function above, this function uses an abstract interface to an object
++     * of type Epetra_RowMatrix which allows a user to pass quite general
++     * objects to the ML preconditioner.
++     *
++     * This initialization routine is useful in cases where the operator to be
++     * preconditioned is not a TrilinosWrappers::SparseMatrix object but still
++     * allows getting a copy of the entries in each of the locally owned matrix
++     * rows (method ExtractMyRowCopy) and implements a matrix-vector product
++     * (methods Multiply or Apply). An example are operators which provide
++     * faster matrix-vector multiplications than possible with matrix entries
++     * (matrix-free methods). These implementations can be beneficially
++     * combined with Chebyshev smoothers that only perform matrix-vector
++     * products. The interface class Epetra_RowMatrix is very flexible to
++     * enable this kind of implementation.
++     */
++    void initialize (const Epetra_RowMatrix &matrix,
++                     const AdditionalData   &additional_data = AdditionalData());
++
++
++/**
++     * This function can be used for a faster recalculation of the
++     * preconditioner construction when the matrix entries underlying the
++     * preconditioner have changed, but the matrix sparsity pattern has
++     * remained the same. What this function does is taking the already
++     * generated coarsening structure, computing the AMG prolongation and
++     * restriction according to a smoothed aggregation strategy and then
++     * building the whole multilevel hierarchy. This function can be
++     * considerably faster than the initialize function, since the coarsening
++     * pattern is usually the most difficult thing to do when setting up the
++     * AMG ML preconditioner.
++     */
++    void reinit ();
++
++    /**
++     * Destroys the preconditioner, leaving an object like just after having
++     * called the constructor.
++     */
++    void clear ();
++
++    /**
++     * Prints an estimate of the memory consumption of this class.
++     */
++    size_type memory_consumption () const;
++
++  private:
++    /**
++     * A copy of the deal.II matrix into Trilinos format.
++     */
++    std::shared_ptr<SparseMatrix> trilinos_matrix;
++  };
++
+ 
+ 
+ #    if defined(DOXYGEN) || DEAL_II_TRILINOS_VERSION_GTE(11, 14, 0)
+diff --git a/source/lac/trilinos_precondition_ml.cc b/source/lac/trilinos_precondition_ml.cc
+index 57c8234437..a69fe3c28e 100644
+--- a/source/lac/trilinos_precondition_ml.cc
++++ b/source/lac/trilinos_precondition_ml.cc
+@@ -26,6 +26,7 @@
+ #  include <Epetra_MultiVector.h>
+ #  include <Ifpack.h>
+ #  include <Ifpack_Chebyshev.h>
++#  include <Ifpack_Hypre.h>
+ #  include <Teuchos_ParameterList.hpp>
+ #  include <Teuchos_RCP.hpp>
+ #  include <ml_MultiLevelPreconditioner.h>
+@@ -297,6 +298,111 @@ namespace TrilinosWrappers
+   }
+ 
+ 
++  /* -------------------------- PreconditionBoomerAMG -------------------------- */
++
++  PreconditionBoomerAMG::AdditionalData::
++  AdditionalData (const bool symmetric_operator,
++                  const double strong_threshold,
++                  const double max_row_sum,
++                  const unsigned int aggressive_coarsening_num_levels,
++                  const bool output_details)
++    :
++    symmetric_operator (symmetric_operator),
++    strong_threshold (strong_threshold),
++    max_row_sum (max_row_sum),
++    aggressive_coarsening_num_levels (aggressive_coarsening_num_levels),
++    output_details (output_details)
++  {}
++
++
++  PreconditionBoomerAMG::~PreconditionBoomerAMG()
++  {
++    preconditioner.reset();
++    trilinos_matrix.reset();
++  }
++
++
++
++  void
++  PreconditionBoomerAMG::initialize (const SparseMatrix   &matrix,
++                                     const AdditionalData &additional_data)
++  {
++    initialize(matrix.trilinos_matrix(), additional_data);
++  }
++
++
++
++  void
++  PreconditionBoomerAMG::initialize (const Epetra_RowMatrix &matrix,
++                                     const AdditionalData   &additional_data)
++  {
++    Ifpack_Hypre* h=0;
++    preconditioner.reset(h=new Ifpack_Hypre(const_cast<Epetra_RowMatrix*>(&matrix)));
++    h->SetParameter(false/*=UsePreconditioner*/);
++    h->SetParameter(Preconditioner);
++    h->SetParameter(Preconditioner, BoomerAMG);
++
++    h->SetParameter(Preconditioner, &HYPRE_BoomerAMGSetAggNumLevels, additional_data.aggressive_coarsening_num_levels);
++    h->SetParameter(Preconditioner, &HYPRE_BoomerAMGSetStrongThreshold, additional_data.strong_threshold);
++    h->SetParameter(Preconditioner, &HYPRE_BoomerAMGSetMaxRowSum, additional_data.max_row_sum);
++    if (additional_data.symmetric_operator) {
++      h->SetParameter(Preconditioner, &HYPRE_BoomerAMGSetCycleRelaxType, 6, 1); // symmetric-SOR/Jacobi down cycle
++      h->SetParameter(Preconditioner, &HYPRE_BoomerAMGSetCycleRelaxType, 6, 2); // symmetric-SOR/Jacobi up cycle
++      h->SetParameter(Preconditioner, &HYPRE_BoomerAMGSetCycleRelaxType, 9, 3); // Gaussian-elimination coarse grid
++    } else {
++      h->SetParameter(Preconditioner, &HYPRE_BoomerAMGSetCycleRelaxType, 3, 1); // SOR/Jacobi down cycle
++      h->SetParameter(Preconditioner, &HYPRE_BoomerAMGSetCycleRelaxType, 3, 2); // SOR/Jacobi up cycle
++      h->SetParameter(Preconditioner, &HYPRE_BoomerAMGSetCycleRelaxType, 9, 3); // Gaussian-elimination coarse grid
++    }
++    h->SetParameter(Preconditioner, &HYPRE_BoomerAMGSetPrintLevel, additional_data.output_details);
++
++    // default options
++    h->SetParameter(Preconditioner, &HYPRE_BoomerAMGSetTol, 0.0); // 0 implies that we want a preconditioner only
++    h->SetParameter(Preconditioner, &HYPRE_BoomerAMGSetCycleType, 1);
++    h->SetParameter(Preconditioner, &HYPRE_BoomerAMGSetMaxLevels, 25);
++    h->SetParameter(Preconditioner, &HYPRE_BoomerAMGSetMaxIter, 1);
++    h->SetParameter(Preconditioner, &HYPRE_BoomerAMGSetTruncFactor, 0.0);
++    h->SetParameter(Preconditioner, &HYPRE_BoomerAMGSetCoarsenType, 6);
++    h->SetParameter(Preconditioner, &HYPRE_BoomerAMGSetMeasureType, 0);
++    h->SetParameter(Preconditioner, &HYPRE_BoomerAMGSetRelaxOrder, 1);
++    h->SetParameter(Preconditioner, &HYPRE_BoomerAMGSetInterpType, 0);
++    h->SetParameter(Preconditioner, &HYPRE_BoomerAMGSetPMaxElmts, 0);
++    h->SetParameter(Preconditioner, &HYPRE_BoomerAMGSetNumPaths, 1);
++    h->SetParameter(Preconditioner, &HYPRE_BoomerAMGSetRelaxType, 6);
++    h->SetParameter(Preconditioner, &HYPRE_BoomerAMGSetNumSweeps, 1);
++
++    h->Initialize();
++    h->Compute();
++  }
++
++
++  void PreconditionBoomerAMG::reinit ()
++  {
++    Assert(false, ExcMessage("PreconditionBoomerAMG::reinit is not implemented yet."));
++  }
++
++
++
++  void PreconditionBoomerAMG::clear ()
++  {
++    PreconditionBase::clear();
++    trilinos_matrix.reset();
++  }
++
++
++
++  PreconditionBoomerAMG::size_type
++  PreconditionBoomerAMG::memory_consumption() const
++  {
++    unsigned int memory = sizeof(*this);
++
++    // todo: find a way to read out ML's data
++    // sizes
++    if (trilinos_matrix.get() != nullptr)
++      memory += trilinos_matrix->memory_consumption();
++    return memory;
++  }
++
+ 
+   // explicit instantiations
+   template void
