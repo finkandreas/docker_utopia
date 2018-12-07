@@ -33,6 +33,8 @@ if [[ $STAGE == 1 || $STAGE == ALL ]] ; then
     export EIGEN_DIR="${INSTALLBASE}/eigen"
     cp ${BUILDBASE}/eigen/logfile ${INSTALLBASE}/eigen/build.log
     echo "export EIGEN_DIR=\"${EIGEN_DIR}\"" >> "${INSTALLBASE}/environment"
+else
+    source "${INSTALLBASE}/environment"
 fi
 
 if [[ $STAGE == 2 || $STAGE == ALL ]] ; then
