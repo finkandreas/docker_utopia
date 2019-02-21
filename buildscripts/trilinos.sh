@@ -40,14 +40,13 @@ fi
 #~ export OMPI_CXX="${BUILDSCRIPT_DIR}/nvcc_wrapper"
 
 # if reverse apply succeeds, the patch has been applied already (we negate the check, i.e. we apply only if reverse apply does not succeed)
-PATCHES=""
+PATCHES="trilinos_amesos2_explicit_instantiation.patch"
 for p in $PATCHES ; do
   if ! patch --dry-run -f -R -p1 < ${BUILDSCRIPT_DIR}/${p} ; then
     patch -N -p1 < ${BUILDSCRIPT_DIR}/${p}
   fi
 done
 
-CXX_COMPILER="g++"
 if [[ -n ${BUILD_WITH_CUDA_SUPPORT} ]] ; then
   CMAKE_CUDA_OPTS="-DKokkos_ENABLE_Cuda=ON -DKokkos_ENABLE_Cuda_UVM=ON -DKokkos_ENABLE_Cuda_Lambda=ON -DTPL_ENABLE_CUDA=ON -DTPL_ENABLE_CUSPARSE=ON " # -DKokkos_ENABLE_Cuda_Relocatable_Device_Code=ON -DKokkos_ENABLE_Cuda_RDC=ON"
   CUDA_BLAS_EXTRA=";cusparse"
@@ -70,6 +69,7 @@ fi
 pushd ${BUILDDIR}
 cmake -DCMAKE_INSTALL_PREFIX=${INSTALLDIR} -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
       -DCMAKE_C_FLAGS="-fopenmp" -DCMAKE_Fortran_FLAGS="-fopenmp" -DCMAKE_CXX_FLAGS="-std=c++11 -O3 ${MARCH} ${CXX_CUDA_FLAGS}" \
+      -DCMAKE_CXX_COMPILER="$(which mpic++)" -DCMAKE_C_COMPILER="$(which mpicc)" -DCMAKE_Fortran_COMPILER="$(which mpifort)" \
       -DCMAKE_SKIP_RPATH=OFF -DCMAKE_SKIP_INSTALL_RPATH=TRUE -DTrilinos_SET_INSTALL_RPATH=OFF \
       -DTPL_ENABLE_Boost=OFF \
       -DHYPRE_INCLUDE_DIRS="${PETSC_DIR}/include" -DHYPRE_LIBRARY_DIRS="${PETSC_DIR}/lib" \
@@ -84,6 +84,9 @@ cmake -DCMAKE_INSTALL_PREFIX=${INSTALLDIR} -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_B
       -DTPL_ENABLE_SuperLU=ON -DSuperLU_INCLUDE_DIRS=${PETSC_DIR}/include -DSuperLU_LIBRARY_DIRS=${PETSC_DIR}/lib \
       -DTPL_ENABLE_SuperLUDist=ON -DSuperLUDist_INCLUDE_DIRS=${PETSC_DIR}/include -DSuperLUDist_LIBRARY_DIRS=${PETSC_DIR}/lib \
       -DBUILD_SHARED_LIBS=ON \
+      -DTrilinos_ENABLE_EXPLICIT_INSTANTIATION=ON \
+      -DTrilinos_ENABLE_OpenMP=ON \
+      -DTrilinos_ENABLE_SERIAL=ON \
       -DTrilinos_ENABLE_Amesos=ON -DAmesos_ENABLE_SuperLUDist=OFF -DTrilinos_ENABLE_Amesos2=ON -DAmesos2_ENABLE_Basker=ON -DAmesos2_ENABLE_SuperLUDist=OFF -DAmesos2_ENABLE_SuperLU=OFF -DAmesos2_ENABLE_TIMERS=ON -DAmesos2_ENABLE_VERBOSE_DEBUG=ON -DAmesos2_ENABLE_MUMPS=ON \
       -DTrilinos_ENABLE_Anasazi=OFF \
       -DTrilinos_ENABLE_AztecOO=ON -DAztecOO_ENABLE_AZLU=OFF -DAztecOO_ENABLE_TEUCHOS_TIME_MONITOR=ON \
@@ -101,13 +104,12 @@ cmake -DCMAKE_INSTALL_PREFIX=${INSTALLDIR} -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_B
       -DTrilinos_ENABLE_ML=ON -DML_ENABLE_Flops=ON -DML_ENABLE_Timing=ON -DML_ENABLE_SuperLU=OFF \
       -DTrilinos_ENABLE_MueLu=ON \
       -DTrilinos_ENABLE_NOX=ON \
-      -DTrilinos_ENABLE_OpenMP=ON \
       -DRTOp_HIDE_DEPRECATED_CODE=ON \
       -DTrilinos_ENABLE_Sacado=ON \
       -DTrilinos_ENABLE_ShyLU=OFF -DTrilinos_ENABLE_ShyLU_Node=OFF \
       -DTrilinos_ENABLE_Stratimikos=ON \
-      -DTrilinos_ENABLE_TeuchosParser=ON -DTeuchos_ENABLE_EXPLICIT_INSTANTIATION=ON -DTeuchos_ENABLE_FLOAT=ON -DTeuchos_ENABLE_MPI=ON \
-      -DTrilinos_ENABLE_Tpetra=ON -DTrilinos_ENABLE_TpetraCore=ON -DTpetra_INST_INT_LONG=ON -DTpetra_THROW_Efficiency_Warnings=ON -DTpetra_INST_OPENMP=ON -DTpetra_INST_SERIAL=ON -DTpetra_HIDE_DEPRECATED_CODE=ON \
+      -DTrilinos_ENABLE_TeuchosParser=ON -DTeuchos_ENABLE_MPI=ON \
+      -DTrilinos_ENABLE_Tpetra=ON -DTrilinos_ENABLE_TpetraCore=ON -DTpetra_THROW_Efficiency_Warnings=ON -DTpetra_HIDE_DEPRECATED_CODE=ON -DTpetra_INST_OPENMP=ON -DTpetra_INST_SERIAL=ON \
       -DTrilinos_ENABLE_TriKota=OFF \
       -DTrilinos_ENABLE_Zoltan=ON -DTrilinos_ENABLE_Zoltan2=ON -DZoltan_ENABLE_CPPDRIVER=OFF \
       -DUSE_XSDK_DEFAULTS=OFF -DXpetra_ENABLE_Kokkos_Refactor=ON \
