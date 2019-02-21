@@ -1,3 +1,20 @@
+diff --git a/include/base/dof_map.h b/include/base/dof_map.h
+index 0fe1f0351..ce6cf8143 100644
+--- a/include/base/dof_map.h
++++ b/include/base/dof_map.h
+@@ -44,6 +44,12 @@
+ #include <vector>
+ #include <memory>
+ 
++#include <type_traits>
++namespace {
++  typedef std::make_unsigned<long>::type dummy__;
++}
++
++
+ namespace libMesh
+ {
+ 
 diff --git a/src/numerics/petsc_vector.C b/src/numerics/petsc_vector.C
 index 80461b287..d9d107ceb 100644
 --- a/src/numerics/petsc_vector.C
@@ -48,7 +65,7 @@ index 80461b287..d9d107ceb 100644
                            petsc_subvector->_vec,
                            subvector_is,
 diff --git a/src/solvers/petsc_linear_solver.C b/src/solvers/petsc_linear_solver.C
-index 802aafc3e..0584a5ce0 100644
+index 802aafc3e..1a2562350 100644
 --- a/src/solvers/petsc_linear_solver.C
 +++ b/src/solvers/petsc_linear_solver.C
 @@ -471,7 +471,7 @@ PetscLinearSolver<T>::solve (SparseMatrix<T> &  matrix_in,
@@ -123,20 +140,12 @@ index 802aafc3e..0584a5ce0 100644
            LIBMESH_CHKERR(ierr);
  
            ierr = VecScatterBegin(scatter1,_subset_solve_mode==SUBSET_COPY_RHS ? rhs->vec() : solution->vec(),subvec1,INSERT_VALUES,SCATTER_FORWARD);
-diff --git a/include/base/dof_map.h b/include/base/dof_map.h
-index 0fe1f0351..ce6cf8143 100644
---- a/include/base/dof_map.h
-+++ b/include/base/dof_map.h
-@@ -44,6 +44,12 @@
- #include <vector>
- #include <memory>
- 
-+#include <type_traits>
-+namespace {
-+  typedef std::make_unsigned<long>::type dummy__;
-+}
-+
-+
- namespace libMesh
- {
- 
+@@ -1693,7 +1693,7 @@ LinearConvergenceReason PetscLinearSolver<T>::get_converged_reason() const
+     case KSP_DIVERGED_INDEFINITE_MAT   : return DIVERGED_INDEFINITE_MAT;
+     case KSP_CONVERGED_ITERATING       : return CONVERGED_ITERATING;
+ #if !PETSC_VERSION_LESS_THAN(3,7,0)
+-    case KSP_DIVERGED_PCSETUP_FAILED   : return DIVERGED_PCSETUP_FAILED;
++    case KSP_DIVERGED_PC_FAILED   : return DIVERGED_PCSETUP_FAILED;
+ #endif
+     default :
+       libMesh::err << "Unknown convergence flag!" << std::endl;

@@ -39,17 +39,17 @@ if [[ -f ${SRCDIR}/utopia/CMakeLists.txt ]]; then
   pushd ${SRCDIR}
   git pull
 else
-  git clone -b development --recurse-submodules https://bitbucket.org/zulianp/utopia.git ${SRCDIR}
+  git clone -b master --recurse-submodules https://bitbucket.org/zulianp/utopia.git ${SRCDIR}
   pushd ${SRCDIR}
 fi
 
 
 if [[ $BUILD_WITH_CUDA_SUPPORT == 1 ]]; then
-  export CXX=$(which nvcc_wrapper
+    export CXX=$(which nvcc_wrapper)
   PATCHES="utopia_no_tests.patch"
 fi
 
-PATCHES="$PATCHES utopia_hpcpredict.patch"
+PATCHES="$PATCHES utopia_hpcpredict.patch utopia_petsc.patch"
 for patch in $PATCHES ; do
   # if reverse apply succeeds, the patch has been applied already (we negate the check, i.e. we apply only if reverse apply does not succeed)
   if ! patch --dry-run -f -R -p1 < ${BUILDSCRIPT_DIR}/${patch} ; then

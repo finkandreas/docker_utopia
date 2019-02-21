@@ -1,0 +1,42 @@
+diff --git a/utopia/backend/petsc/solvers/linear/utopia_petsc_ConvergedReason.cpp b/utopia/backend/petsc/solvers/linear/utopia_petsc_ConvergedReason.cpp
+index 1a5f5ec1..88265235 100644
+--- a/utopia/backend/petsc/solvers/linear/utopia_petsc_ConvergedReason.cpp
++++ b/utopia/backend/petsc/solvers/linear/utopia_petsc_ConvergedReason.cpp
+@@ -6,7 +6,7 @@ namespace utopia {
+ 	bool ksp_convergence_fatal_failure(const int code)
+ 	{
+ 		switch(code) {
+-			case KSP_DIVERGED_PCSETUP_FAILED:
++			case KSP_DIVERGED_PC_FAILED:
+ 			{
+ 				return true;
+ 			}
+@@ -138,7 +138,7 @@ namespace utopia {
+ 				break;
+ 			}
+ 
+-			case KSP_DIVERGED_PCSETUP_FAILED:
++			case KSP_DIVERGED_PC_FAILED:
+ 			{
+ 				os << "KSP_DIVERGED_PCSETUP_FAILED\n";
+ 				break;
+@@ -152,4 +152,4 @@ namespace utopia {
+ 
+ 		}
+ 	}
+-}
+\ No newline at end of file
++}
+diff --git a/utopia/backend/petsc/solvers/linear/utopia_petsc_KSPSolver.cpp b/utopia/backend/petsc/solvers/linear/utopia_petsc_KSPSolver.cpp
+index af61ba3a..fa26d99f 100644
+--- a/utopia/backend/petsc/solvers/linear/utopia_petsc_KSPSolver.cpp
++++ b/utopia/backend/petsc/solvers/linear/utopia_petsc_KSPSolver.cpp
+@@ -117,7 +117,7 @@ namespace utopia {
+             case KSP_DIVERGED_INDEFINITE_PC: { return "KSP_DIVERGED_INDEFINITE_PC"; }
+             case KSP_DIVERGED_NANORINF: { return "KSP_DIVERGED_NANORINF"; }
+             case KSP_DIVERGED_INDEFINITE_MAT: { return "KSP_DIVERGED_INDEFINITE_MAT"; }
+-            case KSP_DIVERGED_PCSETUP_FAILED: { return "KSP_DIVERGED_PCSETUP_FAILED"; }
++            case KSP_DIVERGED_PC_FAILED: { return "KSP_DIVERGED_PCSETUP_FAILED"; }
+             case KSP_CONVERGED_ITERATING: { return "KSP_CONVERGED_ITERATING"; }
+ 
+             default: {

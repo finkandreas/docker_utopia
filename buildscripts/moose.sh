@@ -59,7 +59,7 @@ for patch in $PATCHES ; do
 done
 popd
 
-PATCHES="libmesh_additional_config.patch"
+PATCHES="libmesh_additional_config.patch moose_petsc.patch"
 for patch in $PATCHES ; do
   # if reverse apply succeeds, the patch has been applied already (we negate the check, i.e. we apply only if reverse apply does not succeed)
   if ! patch --dry-run -f -R -p1 < ${BUILDSCRIPT_DIR}/${patch} ; then
@@ -74,6 +74,6 @@ else
   ./scripts/update_and_rebuild_libmesh.sh
 fi
 
-rsync -a --exclude="libmesh" "${SRCDIR}/" "${INSTALLDIR}"
+rsync -a --exclude=".git" --exclude="libmesh" "${SRCDIR}/" "${INSTALLDIR}"
 pushd "${INSTALLDIR}/framework"
 make -j2
