@@ -47,6 +47,7 @@ RUN cd /tmp \
     && rm -Rf cmake-3.12.3*
 
 COPY buildscripts /tmp/buildscripts
+SHELL ["/bin/bash", "-c"]
 RUN source scl_source enable devtoolset-7 \
     &&/tmp/buildscripts/build_cpu.sh /tmp/build /opt_scientific/libs 1 \
     && echo "source scl_source enable devtoolset-7" >> /opt_scientific/libs/environment \
