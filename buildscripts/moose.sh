@@ -51,7 +51,7 @@ git checkout 235e064487b3911937ad6d1639fefdc171ba7ec3
 git submodule init libmesh
 git submodule update libmesh
 pushd ${SRCDIR}/libmesh
-PATCHES="moose_libmesh.patch"
+PATCHES=""
 for patch in $PATCHES ; do
   if ! patch --dry-run -f -R -p1 < ${BUILDSCRIPT_DIR}/${patch} ; then
     patch -N -p1 < ${BUILDSCRIPT_DIR}/${patch}
@@ -59,7 +59,7 @@ for patch in $PATCHES ; do
 done
 popd
 
-PATCHES="libmesh_additional_config.patch moose_petsc.patch"
+PATCHES="libmesh_additional_config.patch"
 for patch in $PATCHES ; do
   # if reverse apply succeeds, the patch has been applied already (we negate the check, i.e. we apply only if reverse apply does not succeed)
   if ! patch --dry-run -f -R -p1 < ${BUILDSCRIPT_DIR}/${patch} ; then

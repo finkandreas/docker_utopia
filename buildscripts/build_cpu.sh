@@ -1,3 +1,5 @@
+#!/bin/bash
+
 set -e
 set -x
 set -o pipefail
@@ -100,5 +102,6 @@ if [[ $STAGE == 6 || $STAGE == ALL ]] ; then
     export UTOPIA_DIR="${INSTALLBASE}/utopia"
     cp ${BUILDBASE}/utopia/logfile ${INSTALLBASE}/utopia/build.log
     echo "export UTOPIA_DIR=\"${UTOPIA_DIR}\"" >> "${INSTALLBASE}/environment"
+    echo "export LD_LIBRARY_PATH=\"\${P4EST_DIR}/lib:\${TRILINOS_DIR}/lib:\${PETSC_DIR}/lib:\${MOOSE_DIR}/framework:\${LIBMESH_DIR}/lib:\$LD_LIBRARY_PATH\"" >> "${INSTALLBASE}/environment"
 fi
 

@@ -40,7 +40,7 @@ fi
 #~ export OMPI_CXX="${BUILDSCRIPT_DIR}/nvcc_wrapper"
 
 # if reverse apply succeeds, the patch has been applied already (we negate the check, i.e. we apply only if reverse apply does not succeed)
-PATCHES="trilinos_amesos2_explicit_instantiation.patch"
+PATCHES=""
 for p in $PATCHES ; do
   if ! patch --dry-run -f -R -p1 < ${BUILDSCRIPT_DIR}/${p} ; then
     patch -N -p1 < ${BUILDSCRIPT_DIR}/${p}
@@ -94,7 +94,7 @@ cmake -DCMAKE_INSTALL_PREFIX=${INSTALLDIR} -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_B
       -DTrilinos_ENABLE_Epetra=ON -DEpetraExt_USING_HDF5=ON -DEpetra_ENABLE_Fortran=OFF -DEpetra_ENABLE_THREADS=ON -DEpetra_ENABLE_WARNING_MESSAGES=ON -DEpetra_HIDE_DEPRECATED_CODE=ON -DEpetraExt_HIDE_DEPRECATED_CODE=ON \
       -DTrilinos_ENABLE_Ifpack=ON -DTrilinos_ENABLE_Ifpack2=ON -DIfpack2_ENABLE_Experimental_KokkosKernels_Features=OFF -DIfpack2_ENABLE_IFPACK2_TIMER_BARRIER=ON -DIfpack2_HIDE_DEPRECATED_CODE=ON -DIfpack_HIDE_DEPRECATED_CODE=ON \
       -DTrilinos_ENABLE_Intrepid=ON -DTrilinos_ENABLE_Intrepid2=ON \
-      -DTrilinos_ENABLE_Kokkos=ON -DKokkos_ENABLE_Debug_Bounds_Check=OFF -DKokkos_ENABLE_MPI=ON \
+      -DTrilinos_ENABLE_Kokkos=ON -DKokkos_ENABLE_DEBUG=OFF -DKokkos_ENABLE_Debug_Bounds_Check=OFF -DKokkos_ENABLE_MPI=ON \
       -DTrilinos_ENABLE_KokkosAlgorithms=ON\
       -DTrilinos_ENABLE_KokkosContainers=ON \
       -DTrilinos_ENABLE_KokkosCore=ON \
@@ -106,7 +106,7 @@ cmake -DCMAKE_INSTALL_PREFIX=${INSTALLDIR} -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_B
       -DTrilinos_ENABLE_NOX=ON \
       -DRTOp_HIDE_DEPRECATED_CODE=ON \
       -DTrilinos_ENABLE_Sacado=ON \
-      -DTrilinos_ENABLE_ShyLU=OFF -DTrilinos_ENABLE_ShyLU_Node=OFF \
+      -DTrilinos_ENABLE_ShyLU=OFF -DTrilinos_ENABLE_ShyLUHTS=OFF -DTrilinos_ENABLE_ShyLU_Node=OFF \
       -DTrilinos_ENABLE_Stratimikos=ON \
       -DTrilinos_ENABLE_TeuchosParser=ON -DTeuchos_ENABLE_MPI=ON \
       -DTrilinos_ENABLE_Tpetra=ON -DTrilinos_ENABLE_TpetraCore=ON -DTpetra_THROW_Efficiency_Warnings=ON -DTpetra_HIDE_DEPRECATED_CODE=ON -DTpetra_INST_OPENMP=ON -DTpetra_INST_SERIAL=ON \
