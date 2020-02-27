@@ -46,7 +46,7 @@ else
   # git checkout eb3fa8ac14
 fi
 # For now we need a very specific version of moose!!!
-git checkout 235e064487b3911937ad6d1639fefdc171ba7ec3
+#git checkout 235e064487b3911937ad6d1639fefdc171ba7ec3
 
 git submodule init libmesh
 git submodule update libmesh
@@ -69,6 +69,7 @@ done
 
 # Build libmesh and install
 if [[ -e /usr/lib64/libtirpc.so ]]; then
+  false
   LDFLAGS="-ltirpc" CPPFLAGS="-I/usr/include/tirpc" CXXFLAGS="-I/usr/include/tirpc $CXXFLAGS" ./scripts/update_and_rebuild_libmesh.sh
 else
   ./scripts/update_and_rebuild_libmesh.sh

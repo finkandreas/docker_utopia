@@ -10,18 +10,20 @@ STAGE=${3:-ALL}
 
 SCRIPTBASE=$(dirname $(realpath $0))
 
+unset PETSC_DIR
+unset HYPRE_DIR
 unset P4EST_DIR
 unset BOOST_DIR
 unset EIGEN_DIR
 unset TRILINOS_DIR
-unset PETSC_DIR
 unset MOOSE_DIR
 unset LIBMESH_DIR
 unset UTOPIA_DIR
 
 if [[ $STAGE == 1 || $STAGE == ALL ]] ; then
     mkdir -p "${INSTALLBASE}"
-    echo "export CXXFLAGS=\"-std=c++11\"" > "${INSTALLBASE}/environment"
+    echo "CXXFLAGS=\"\$(printf '%s\n' \"\${CXXFLAGS} -std=c++14\" | awk -v RS='[[:space:]]+' '!a[\$0]++{printf \"%s%s\", \$0, RT}')\"" >> "${INSTALLBASE}/environment"
+    echo "export CXXFLAGS" >> "${INSTALLBASE}/environment"
     source "${INSTALLBASE}/environment"
 
     mkdir -p ${BUILDBASE}/p4est
@@ -41,9 +43,10 @@ fi
 
 if [[ $STAGE == 2 || $STAGE == ALL ]] ; then
     # first install petsc without trilinos support, then build trilinos with petsc support, then build petsc with trilinos support
-    mkdir -p ${BUILDBASE}/petsc.bootstrap
-    PETSC_BOOTSTRAP=1 "${SCRIPTBASE}/petsc.sh" "${BUILDBASE}/petsc.bootstrap" "${INSTALLBASE}/petsc" |& tee ${BUILDBASE}/petsc.bootstrap/logfile
-    cp "${BUILDBASE}/petsc.bootstrap/logfile" "${INSTALLBASE}/petsc/build_bootstrap.log"
+    mkdir -p ${BUILDBASE}/petsc
+    PETSC_BOOTSTRAP=1 "${SCRIPTBASE}/petsc.sh" "${BUILDBASE}/petsc" "${INSTALLBASE}/petsc" |& tee ${BUILDBASE}/petsc/logfile
+    cp "${BUILDBASE}/petsc/logfile" "${INSTALLBASE}/petsc/build_bootstrap.log"
+    [[ -h "${INSTALLBASE}/petsc/build.log" ]] || ln -s build_bootstrap.log "${INSTALLBASE}/petsc/build.log"
 fi
 
 if [[ $STAGE == 3 || $STAGE == ALL ]] ; then
@@ -56,10 +59,18 @@ fi
 
 if [[  $STAGE == 4 || $STAGE == ALL ]] ; then
     # now build petsc with trilinos support
-    mkdir -p ${BUILDBASE}/petsc
-    "${SCRIPTBASE}/petsc.sh" "${BUILDBASE}/petsc" "${INSTALLBASE}/petsc" |& tee ${BUILDBASE}/petsc/logfile
+#    mkdir -p ${BUILDBASE}/petsc
+#    "${SCRIPTBASE}/petsc.sh" "${BUILDBASE}/petsc" "${INSTALLBASE}/petsc" |& tee ${BUILDBASE}/petsc/logfile
+#    cp ${BUILDBASE}/petsc/logfile ${INSTALLBASE}/petsc/build.log
+
+    # build petsc master branch (as bootstrap)
+    mkdir -p ${BUILDBASE}/petsc.master
+    PETSC_BOOTSTRAP=1 PETSC_BRANCH=master "${SCRIPTBASE}/petsc.sh" "${BUILDBASE}/petsc.master" "${INSTALLBASE}/petsc.master" |& tee ${BUILDBASE}/petsc.master/logfile
+    cp "${BUILDBASE}/petsc.master/logfile" "${INSTALLBASE}/petsc.master/build_bootstrap.log"
+    [[ -h "${INSTALLBASE}/petsc.master/build.log" ]] || ln -s build_bootstrap.log "${INSTALLBASE}/petsc.master/build.log"
+
     export PETSC_DIR="${INSTALLBASE}/petsc"
-    cp ${BUILDBASE}/petsc/logfile ${INSTALLBASE}/petsc/build.log
+    export HDF5_DIR="${INSTALLBASE}/petsc"
     echo "export PETSC_DIR=\"${PETSC_DIR}\"" >> "${INSTALLBASE}/environment"
     echo "export HDF5_DIR=\"${PETSC_DIR}\"" >> "${INSTALLBASE}/environment"
 fi

@@ -37,7 +37,7 @@ pushd ${MAINDIR}
 if [[ -f ${SRCDIR}/utopia/CMakeLists.txt ]]; then
   # it seems we have cloned it already
   pushd ${SRCDIR}
-  git pull
+#  git pull
 else
   git clone --recurse-submodules ${GIT_DEPTH} -b development https://bitbucket.org/zulianp/utopia.git ${SRCDIR}
   pushd ${SRCDIR}
@@ -57,7 +57,12 @@ for patch in $PATCHES ; do
 done
 
 pushd ${BUILDDIR}
-cmake -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_FLAGS_RELWITHDEBINFO="-O2 -g" -DCMAKE_INSTALL_PREFIX=${INSTALLDIR} -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_CXX_FLAGS="-fopenmp $MARCH -Wall -std=c++11" \
+cmake -DCMAKE_VERBOSE_MAKEFILE=ON \
+      -DCMAKE_CXX_FLAGS_RELWITHDEBINFO="-O2 -g" \
+      -DCMAKE_CXX_FLAGS="-fopenmp $MARCH -Wall -std=c++14" \
+      -DCMAKE_INSTALL_PREFIX=${INSTALLDIR} \
+      -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+      -DENABLE_CXX14_FEATURES=ON \
       -DTRY_WITH_PETSC=ON -DPETSC_DIR=${PETSC_DIR} \
       -DTRY_WITH_TRILINOS=ON -DTRILINOS_DIR=${TRILINOS_DIR} \
       -DTRY_WITH_EIGEN_3=ON -DEIGEN3_INCLUDE_DIR=${EIGEN_DIR}/include/eigen3 \
@@ -70,6 +75,14 @@ make -j2
 make -j2 install
 
 pushd ${BUILDDIR_FE}
-cmake -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_FLAGS_RELWITHDEBINFO="-O2 -g" -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DUTOPIA_DIR=${INSTALLDIR} -DLIBMESH_DIR=${LIBMESH_DIR} -DCMAKE_INSTALL_PREFIX="${INSTALLDIR}" -DCMAKE_CXX_FLAGS="-fopenmp $MARCH -Wall -std=c++11" ${SRCDIR}/utopia_fe
+cmake -DCMAKE_VERBOSE_MAKEFILE=ON \
+      -DCMAKE_CXX_FLAGS_RELWITHDEBINFO="-O2 -g" \
+      -DCMAKE_CXX_FLAGS="-fopenmp $MARCH -Wall -std=c++14" \
+      -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+      -DENABLE_CXX14_FEATURES=ON \
+      -DUTOPIA_DIR=${INSTALLDIR} \
+      -DLIBMESH_DIR=${LIBMESH_DIR} \
+      -DCMAKE_INSTALL_PREFIX="${INSTALLDIR}" \
+      ${SRCDIR}/utopia_fe
 make -j2
 make -j2 install

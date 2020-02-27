@@ -19,6 +19,7 @@ BUILDDIR=${4:-${MAINDIR}/src_build} # petsc does not support out of source build
 TRILINOS_DIR=${TRILINOS_DIR:-${SCRATCH}/build/trilinos/install}
 
 BUILDSCRIPT_DIR=$(dirname $(realpath $0))
+PETSC_BRANCH=${PETSC_BRANCH:-maint}
 
 MARCH=${MARCH:-"-march=native"}
 DEBUG_FLAGS="--with-debugging=0"
@@ -34,7 +35,7 @@ if [[ -f ${SRCDIR}/configure ]]; then
   cd ${SRCDIR}
   git pull
 else
-  git clone -b maint https://bitbucket.org/petsc/petsc ${SRCDIR}
+  git clone -b ${PETSC_BRANCH} https://gitlab.com/petsc/petsc.git ${SRCDIR}
   cd ${SRCDIR}
 fi
 
@@ -53,7 +54,7 @@ fi
 pushd ${BUILDDIR}
 if [[ -z ${PETSC_BOOTSTRAP} ]]; then
   python2 ${SRCDIR}/configure --prefix=${INSTALLDIR} \
-    --with-shared-libraries=1 --with-cxx-dialect=C++11 --with-zlib=1 --with-mpi=1 \
+    --with-shared-libraries=1 --with-cxx-dialect=C++14 --with-zlib=1 --with-mpi=1 \
     --with-trilinos=1 --with-trilinos-dir=${TRILINOS_DIR} \
     --with-netcdf=1 --with-netcdf-dir=${INSTALLDIR} \
     --with-hdf5=1 --with-hdf5-dir=${INSTALLDIR} \
@@ -66,10 +67,10 @@ if [[ -z ${PETSC_BOOTSTRAP} ]]; then
     --with-hypre --with-hypre-dir=${INSTALLDIR} \
     --with-ptscotch=1 --with-ptscotch-dir=${INSTALLDIR} \
     --with-sundials=1 --with-sundials-dir=${INSTALLDIR} \
-    ${DEBUG_FLAGS} $CUDAOPTS COPTFLAGS="-O3 ${MARCH} -fopenmp" CXXOPTFLAGS="-std=c++11 -O3 ${MARCH} -fopenmp"
+    ${DEBUG_FLAGS} $CUDAOPTS COPTFLAGS="-O3 ${MARCH} -fopenmp" CXXOPTFLAGS="-std=c++14 -O3 ${MARCH} -fopenmp"
 else
-  python2 ${SRCDIR}/configure --prefix=${INSTALLDIR} \
-    --with-shared-libraries=1 --with-clean=0 --with-cxx-dialect=C++11 --with-zlib=1 --with-mpi=1 \
+  ${SRCDIR}/configure --prefix=${INSTALLDIR} \
+    --with-shared-libraries=1 --with-clean=0 --with-cxx-dialect=C++14 --with-zlib=1 --with-mpi=1 \
     --download-netcdf=1 \
     --download-hdf5=1 \
     --download-metis=1 \
@@ -81,11 +82,14 @@ else
     --download-hypre=1 \
     --download-ptscotch=1 \
     --download-sundials=1 --download-sundials-configure-arguments="--enable-cvodes --enable-ida --enable-idas --enable-kinsol" \
-    ${DEBUG_FLAGS} $CUDAOPTS COPTFLAGS="-O3 ${MARCH} -fopenmp" CXXOPTFLAGS="-std=c++11 -O3 ${MARCH} -fopenmp"
+    --download-suitesparse=1 \
+    ${DEBUG_FLAGS} $CUDAOPTS COPTFLAGS="-O3 ${MARCH} -fopenmp" CXXOPTFLAGS="-std=c++14 -O3 ${MARCH} -fopenmp"
 fi
 
-PETSC_ARCH="arch-linux2-c-opt"
+PETSC_ARCH="arch-linux-c-opt"
+[[ ! -d ${PETSC_ARCH} ]] && PETSC_ARCH="arch-linux2-c-opt"
 [[ ${BUILD_TYPE,,} == "debug" ]] && PETSC_ARCH="arch-linux2-c-debug"
+[[ ${BUILD_TYPE,,} == "debug" && ! -d ${PETSC_ARCH} ]] && PETSC_ARCH="arch-linux-c-debug"
 
 make PETSC_DIR=${BUILDDIR} PETSC_ARCH=${PETSC_ARCH} MAKE_NP=2 all
 make PETSC_DIR=${BUILDDIR} PETSC_ARCH=${PETSC_ARCH} install

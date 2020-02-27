@@ -1,4 +1,4 @@
-FROM nvidia/cuda:9.2-devel-centos7
+FROM nvidia/cuda:10.2-cudnn7-devel-centos7
 MAINTAINER Andreas Fink <andreas.fink@cscs.ch>
 
 # Update all packages and install the development toolset (newer version of GNU gcc and tools)
@@ -6,7 +6,7 @@ RUN yum -y update \
     && yum install -y centos-release-scl \
     && yum install -y devtoolset-7 \
     && yum group install -y "Development Tools" \
-    && yum install -y blas-devel lapack-devel wget zlib-devel python-devel \
+    && yum install -y blas-devel lapack-devel wget zlib-devel python-devel openssl-devel \
     && echo 'source scl_source enable devtoolset-7' >> ~/.bashrc \
     && source scl_source enable devtoolset-7 \
     && yum clean all
@@ -37,14 +37,14 @@ RUN cd /tmp \
 
 RUN cd /tmp \
     && source scl_source enable devtoolset-7 \
-    && wget https://cmake.org/files/v3.12/cmake-3.12.3.tar.gz \
-    && tar -xf cmake-3.12.3.tar.gz \
-    && cd cmake-3.12.3 \
+    && wget https://github.com/Kitware/CMake/releases/download/v3.16.4/cmake-3.16.4.tar.gz \
+    && tar -xf cmake-3.16.4.tar.gz \
+    && cd cmake-3.16.4 \
     && ./configure --prefix=/usr \
     && make -j4 \
     && make install \
     && cd /tmp \
-    && rm -Rf cmake-3.12.3*
+    && rm -Rf cmake-3.16.4*
 
 COPY buildscripts /tmp/buildscripts
 SHELL ["/bin/bash", "-c"]
